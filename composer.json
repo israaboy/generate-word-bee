@@ -1,0 +1,26 @@
+{
+    "name": "israel/generate-word",
+    "description": "Gerador de documentos Word via formulário",
+    "type": "project",
+    "require": {
+        "php": "^7.4|^8.0",
+        "phpoffice/phpword": "^1.2",
+        "ext-dom": "*",
+        "ext-gd": "*",
+        "ext-zip": "*",
+        "ext-xml": "*",
+        "ext-json": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "actions/",
+            "App\\Includes\\": "includes/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "allow-plugins": {
+            "kylekatarnls/update-helper": true
+        }
+    }
+}

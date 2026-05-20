@@ -1,0 +1,5 @@
+/vendor/
+error_log
+/uploads/*
+!/uploads/.gitkeep
+.vscode/

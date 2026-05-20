@@ -1,0 +1,10 @@
+[20-May-2026 13:56:55 America/Sao_Paulo] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'cargo' in 'SELECT' in /home/plugben1/public_html/app/generate_word/actions/gerar_documento.php:30
+Stack trace:
+#0 /home/plugben1/public_html/app/generate_word/actions/gerar_documento.php(30): PDO->prepare('SELECT nome_fun...')
+#1 {main}
+  thrown in /home/plugben1/public_html/app/generate_word/actions/gerar_documento.php on line 30
+[20-May-2026 13:57:01 America/Sao_Paulo] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'cargo' in 'SELECT' in /home/plugben1/public_html/app/generate_word/actions/gerar_documento.php:30
+Stack trace:
+#0 /home/plugben1/public_html/app/generate_word/actions/gerar_documento.php(30): PDO->prepare('SELECT nome_fun...')
+#1 {main}
+  thrown in /home/plugben1/public_html/app/generate_word/actions/gerar_documento.php on line 30

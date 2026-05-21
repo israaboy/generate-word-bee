@@ -1,6 +1,0 @@
----
-deployment:
-  tasks:
-    - export DEPLOYPATH=/home/plugben1/public_html/app/generate_word/
-    - /bin/mkdir -p $DEPLOYPATH
-    - /bin/cp -r * $DEPLOYPATH

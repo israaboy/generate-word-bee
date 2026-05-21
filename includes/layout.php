@@ -18,10 +18,10 @@ function layout_head(string $titulo = 'Formulários'): void { ?>
     Formulários
   </a>
   <div class="navbar-links">
-    <a href="<?= BASE_URL ?>/"              class="<?= (basename($_SERVER['PHP_SELF']) === 'index.php')   ? 'active' : '' ?>">Dashboard</a>
-    <a href="<?= BASE_URL ?>/formulario.php" class="<?= (basename($_SERVER['PHP_SELF']) === 'formulario.php') ? 'active' : '' ?>">Preencher</a>
-    <a href="<?= BASE_URL ?>/upload.php"     class="<?= (basename($_SERVER['PHP_SELF']) === 'upload.php')     ? 'active' : '' ?>">Templates</a>
-    <a href="<?= BASE_URL ?>/admin.php"      class="<?= (basename($_SERVER['PHP_SELF']) === 'admin.php')      ? 'active' : '' ?>">Admin</a>
+    <a href="/generate_word/"              class="<?= (basename($_SERVER['PHP_SELF']) === 'index.php')   ? 'active' : '' ?>">Dashboard</a>
+    <a href="/generate_word/formulario.php" class="<?= (basename($_SERVER['PHP_SELF']) === 'formulario.php') ? 'active' : '' ?>">Preencher</a>
+    <a href="/generate_word/upload.php"     class="<?= (basename($_SERVER['PHP_SELF']) === 'upload.php')     ? 'active' : '' ?>">Templates</a>
+    <a href="/generate_word/admin.php"      class="<?= (basename($_SERVER['PHP_SELF']) === 'admin.php')      ? 'active' : '' ?>">Admin</a>
   </div>
 </nav>
 <main class="container">

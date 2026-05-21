@@ -1,0 +1,43 @@
+name: Deploy Profissional
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 🚚 Checkout do código
+      uses: actions/checkout@v3
+
+    - name: 🛠️ Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.1' # Use a mesma versão do seu cPanel
+
+    - name: 📦 Instalar Dependências (Composer)
+      run: composer install --no-dev --optimize-autoloader
+
+    - name: 🚀 Deploy via FTP
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+      with:
+        server: ${{ secrets.FTP_SERVER }}
+        username: ${{ secrets.FTP_USERNAME }}
+        password: ${{ secrets.FTP_PASSWORD }}
+        server-dir: public_html/app/generate_word/
+        # A opção abaixo garante que arquivos deletados no Git 
+        # também sejam deletados no servidor (Sincronização Total)
+        dangerous-clean-slate: false 
+        # Se quiser deletar TUDO que não está no git antes de subir:
+        # (Cuidado: isso apaga a pasta uploads se ela não estiver no Git)
+        # delete-removed: true 
+        
+        # O melhor é excluir pastas de dados constantes (como uploads)
+        exclude: |
+          **/.git*
+          **/.github*
+          **/uploads/**
+          config.php

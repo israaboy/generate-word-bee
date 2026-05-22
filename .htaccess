@@ -1,0 +1,12 @@
+RewriteEngine On
+
+# Define que a base das regras é a pasta atual
+RewriteBase /generate_word/
+
+# Se o que o usuário pediu for um arquivo real (imagem, pdf, css, js), abre ele normalmente
+RewriteCond %{REQUEST_FILENAME} !-f
+# Se o que o usuário pediu for uma pasta real, abre ela normalmente
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Caso contrário, manda para o index.php que está dentro dessa mesma pasta
+RewriteRule . index.php [L]

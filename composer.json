@@ -4,12 +4,13 @@
     "type": "project",
     "require": {
         "php": "^7.4|^8.0",
-        "phpoffice/phpword": "^1.2",
+        "phpoffice/phpword": "^1.4",
         "ext-dom": "*",
         "ext-gd": "*",
         "ext-zip": "*",
         "ext-xml": "*",
-        "ext-json": "*"
+        "ext-json": "*",
+        "vlucas/phpdotenv": "^5.6"
     },
     "autoload": {
         "psr-4": {

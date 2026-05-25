@@ -51,7 +51,7 @@ function obter_data_extenso() {
         'America/Sao_Paulo',
         IntlDateFormatter::GREGORIAN
     );
-    return $fmt->format(new DateTime());
+    return "São Paulo, ".$fmt->format(new DateTime());
 }
 
 function obter_campos_globais($func = []) {

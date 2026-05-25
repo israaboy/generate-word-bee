@@ -51,12 +51,12 @@ function obter_data_extenso() {
         'America/Sao_Paulo',
         IntlDateFormatter::GREGORIAN
     );
-    return "São Paulo, ".$fmt->format(new DateTime());
+    return $fmt->format(new DateTime());
 }
 
 function obter_campos_globais($func = []) {
     return [
-        'data_hoje_extenso' => obter_data_extenso(),
+        'data_hoje_extenso' => "São Paulo, ".obter_data_extenso(),
         'data_hoje'         => date('d/m/Y'),
         'ano_atual'         => date('Y'),
         'empresa_nome'      => 'Sua Empresa LTDA', 

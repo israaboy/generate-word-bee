@@ -67,7 +67,7 @@ function obter_campos_globais($func = []) {
     ];
 }
 
-function aplicar_formatacao(mixed $valor, string $formato) {
+function aplicar_formatacao(string $valor, string $formato) {
     if (empty($valor)) return '';
     switch ($formato) {
         case 'uppercase': return mb_strtoupper($valor);

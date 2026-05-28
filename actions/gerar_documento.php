@@ -38,7 +38,6 @@ try {
     $tipo = $stmt->fetch();
     if (!$tipo || empty($tipo['template_word_path'])) responder(false, 'Template Word não configurado para este formulário.');
 
-    // Buscamos o funcionário (ajustado para trazer o cargo se houver)
     $stmt = $db->prepare("SELECT nome_funcionario, cpf, cod_cargo FROM tab_cadastro_funcionarios WHERE cod_funcionario = ?");
     $stmt->execute([$cod_funcionario]);
     $func = $stmt->fetch();
@@ -47,7 +46,7 @@ try {
     $caminho_template = BASE_PATH . '/' . $tipo['template_word_path'];
     if (!file_exists($caminho_template)) responder(false, 'Arquivo base .docx não encontrado no servidor.');
 
-    // --- PROCESSAMENTO DA ASSINATURA ---
+    // --- PROCESSAMENTO DA ASSINATURA DIGITAL (Canvas) ---
     garantir_pasta(DIR_ASSINATURAS);
     $nome_assin = 'sig_' . $id_tipo . '_' . $cod_funcionario . '_' . time() . '.png';
     $path_assin = DIR_ASSINATURAS . $nome_assin;
@@ -62,38 +61,48 @@ try {
     $tpl = new \PhpOffice\PhpWord\TemplateProcessor($caminho_template);
     $placeholdersNoWord = $tpl->getVariables();
 
-    // 1. Preenchimento Automático (Globals + Funcionario)
+    // 1. Preenchimento de Campos Globais (Texto e Assinaturas Fixas)
     $dados_automaticos = obter_campos_globais($func);
     foreach ($dados_automaticos as $chave => $valor) {
         if (in_array($chave, $placeholdersNoWord)) {
-            $tpl->setValue($chave, $valor);
+            
+            // Lógica para Assinaturas Fixas (Imagens)
+            // Verifica se a chave começa com 'assinatura_' e não é a digital do canvas
+            if (str_starts_with($chave, 'assinatura_') && $chave !== 'assinatura_digital') {
+                if (!empty($valor) && file_exists($valor)) {
+                    $tpl->setImageValue($chave, [
+                        'path'   => $valor,
+                        'width'  => 180,
+                        'height' => 60,
+                        'ratio'  => true
+                    ]);
+                }
+            } else {
+                // Preenchimento de texto comum (Data, Empresa, Nomes, etc)
+                $tpl->setValue($chave, $valor);
+            }
         }
     }
 
-    // 2. Preenchimento Dinâmico (Campos do Formulário)
+    // 2. Preenchimento Dinâmico (Campos do Formulário vindo do POST)
     $estrutura = json_decode($tipo['json_estrutura_campos'] ?? '[]', true);
-    $campos_salvar_db = []; // Para guardar no histórico do banco
+    $campos_salvar_db = []; 
 
     foreach ((array)$estrutura as $campo) {
         $name     = $campo['name'];
         $formato  = $campo['format'] ?? '';
         $valor    = trim($_POST['campo_' . $name] ?? $campo['default'] ?? '');
 
-        // Validação básica
         if (($campo['required'] ?? true) && $valor === '') {
             responder(false, "O campo '{$campo['label']}' é obrigatório.");
         }
 
         $valor_formatado = aplicar_formatacao($valor, $formato);
-        
-        // Aplica no Word
         $tpl->setValue($name, $valor_formatado);
-        
-        // Guarda para o JSON do banco
         $campos_salvar_db[$name] = $valor_formatado;
     }
 
-    // 3. Inserção da Imagem da Assinatura
+    // 3. Inserção da Assinatura Digital (Canvas capturado agora)
     if (in_array('assinatura_digital', $placeholdersNoWord)) {
         $tpl->setImageValue('assinatura_digital', [
             'path' => $path_assin, 'width' => 200, 'height' => 80, 'ratio' => false
@@ -127,7 +136,7 @@ try {
     $id_gerado = $db->lastInsertId();
 
     // --- RESPOSTA FINAL ---
-    ob_clean(); // Limpa qualquer aviso/espaço que tenha "vazado"
+    ob_clean(); 
     responder(true, 'Documento gerado com sucesso!', [
         'id_gerado'    => (int) $id_gerado,
         'url_download' => BASE_URL . '/' . $rel_saida

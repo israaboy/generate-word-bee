@@ -56,14 +56,27 @@ function obter_data_extenso() {
 
 function obter_campos_globais($func = []) {
     return [
-        'data_hoje_extenso' => "São Paulo, ".obter_data_extenso(),
-        'data_hoje'         => date('d/m/Y'),
-        'ano_atual'         => date('Y'),
-        'empresa_nome'      => 'Sua Empresa LTDA', 
-        'nome_funcionario'  => $func['nome_funcionario'] ?? '',
-        'cpf'               => $func['cpf'] ?? '',
-        'cargo'             => $func['cargo_nome'] ?? ($func['cod_cargo'] ?? ''),
-        'data_assinatura'   => date('d/m/Y H:i')
+        'data_hoje_extenso'       => "São Paulo, " . obter_data_extenso(),
+        'data_hoje'               => date('d/m/Y'),
+        'ano_atual'               => date('Y'),
+        'empresa_nome'            => 'Sua Empresa LTDA', 
+        
+        // Dados do Funcionário
+        'nome_funcionario'        => $func['nome_funcionario'] ?? '',
+        'cpf'                     => $func['cpf'] ?? '',
+        'cargo'                   => $func['cargo_nome'] ?? ($func['cod_cargo'] ?? ''),
+        
+        // Dados Fixos de Signatários (Texto)
+        'nome_willian'            => 'WILLIAN JUN KOBAYASHI',
+        'cargo_willian'           => 'CEO',
+        'nome_test1'              => 'JULIANA QUEIROZ DOS SANTOS',
+        'nome_test2'              => 'ROSEMEIRE MANGILI DE FIGUEIREDO',
+
+        // Assinaturas (Caminho da Imagem)
+        // Certifique-se de que esses arquivos existem na pasta assets/images/
+        'assinatura_willian'      => BASE_PATH . '/assets/images/assinatura_willian.png',
+        'assinatura_test1'        => BASE_PATH . '/assets/images/assinatura_test1.png',
+        'assinatura_test2'        => BASE_PATH . '/assets/images/assinatura_test2.png',
     ];
 }
 

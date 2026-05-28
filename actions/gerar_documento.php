@@ -139,7 +139,7 @@ try {
     ob_clean(); 
     responder(true, 'Documento gerado com sucesso!', [
         'id_gerado'    => (int) $id_gerado,
-        'url_download' => BASE_URL . '/' . $rel_saida
+        'url_download' => '/generate_word/' . $rel_saida
     ]);
 
 } catch (Exception $e) {

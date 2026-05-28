@@ -71,12 +71,14 @@ function obter_campos_globais($func = []) {
         'cargo_willian'           => 'CEO',
         'nome_test1'              => 'JULIANA QUEIROZ DOS SANTOS',
         'nome_test2'              => 'ROSEMEIRE MANGILI DE FIGUEIREDO',
+        'cpf_test1'               => '438.721.678-63',
+        'cpf_test2'               => '132.484.898-71',
 
         // Assinaturas (Caminho da Imagem)
         // Certifique-se de que esses arquivos existem na pasta assets/images/
         'assinatura_willian'      => BASE_PATH . '/assets/images/assinatura_willian.png',
-        'assinatura_test1'        => BASE_PATH . '/assets/images/assinatura_test1.png',
-        'assinatura_test2'        => BASE_PATH . '/assets/images/assinatura_test2.png',
+        'assinatura_test1'        => BASE_PATH . '/assets/images/assinatura_juliana.png',
+        'assinatura_test2'        => BASE_PATH . '/assets/images/assinatura_rose.png',
     ];
 }
 

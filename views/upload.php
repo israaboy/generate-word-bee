@@ -129,7 +129,13 @@ $templates = $db->query("
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
-var FIXOS = ['nome_funcionario','cpf','cargo','data_assinatura','assinatura_digital'];
+var FIXOS = [
+    'nome_funcionario', 'cpf', 'cargo', 'data_assinatura', 'assinatura_digital',
+    'nome_willian', 'cargo_willian', 'assinatura_willian',
+    'nome_test1', 'cpf_test1', 'assinatura_test1',
+    'nome_test2', 'cpf_test2', 'assinatura_test2',
+    'data_hoje_extenso', 'ano_atual'
+];
 let arquivoSelecionado = null;
 let campoCount = 0;
 

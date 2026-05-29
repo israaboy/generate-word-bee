@@ -95,3 +95,49 @@ function aplicar_formatacao(string $valor, string $formato) {
         default: return $valor;
     }
 }
+
+function extrair_markdown_docx($caminho_docx) {
+    $zip = new ZipArchive;
+    if ($zip->open($caminho_docx) === TRUE) {
+        $xml = $zip->getFromName('word/document.xml');
+        
+        // Limpeza de metadados e fragmentação
+        $xml = preg_replace('/<w:rsid[^>]*\/>/', '', $xml);
+        $xml = preg_replace_callback('/<(w:pPr|w:rPr|w:sectPr|w:tblPr|w:tcPr)[^>]*>.*?<\/\1>/s', function($match) {
+            return str_contains($match[0], '<w:numPr>') ? '<w:numPr/>' : '';
+        }, $xml);
+
+        // Negritos
+        $xml = preg_replace_callback('/<w:r[^>]*>(.*?)<\/w:r>/s', function($match) {
+            if (str_contains($match[1], '<w:b/>')) {
+                return preg_replace('/<w:t[^>]*>(.*?)<\/w:t>/s', ' **$1** ', $match[1]);
+            }
+            return $match[1];
+        }, $xml);
+
+        // Tabelas
+        $xml = preg_replace_callback('/<w:tbl[^>]*>(.*?)<\/w:tbl>/s', function($tblMatch) {
+            preg_match_all('/<w:tr[^>]*>(.*?)<\/w:tr>/s', $tblMatch[1], $rows);
+            $mdTable = "\n\n"; $isFirst = true;
+            foreach ($rows[1] as $rowXml) {
+                preg_match_all('/<w:tc[^>]*>(.*?)<\/w:tc>/s', $rowXml, $cells);
+                $rowData = array_map(fn($c) => str_replace(["\n","|"], [" ","I"], trim(strip_tags($c))), $cells[1]);
+                $mdTable .= "| " . implode(" | ", $rowData) . " |\n";
+                if ($isFirst) { $mdTable .= "|" . str_repeat("---|", count($rowData)) . "\n"; $isFirst = false; }
+            }
+            return $mdTable . "\n";
+        }, $xml);
+
+        $xml = str_replace(['</w:p>', '<w:numPr/>'], ["\n\n", '* '], $xml);
+        $pure_text = strip_tags($xml);
+        
+        // Limpeza final de variáveis
+        $pure_text = preg_replace_callback('/\$\{.*?\}/s', function($match) {
+            return str_replace(["*", " "], "", $match[0]);
+        }, $pure_text);
+
+        $zip->close();
+        return html_entity_decode(trim($pure_text));
+    }
+    return "";
+}

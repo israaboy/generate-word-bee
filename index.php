@@ -32,5 +32,6 @@
     </main>
     <script src="/generate_word/assets/js/app.js"></script>
     <script src="/generate_word/assets/js/router.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   </body>
 </html>

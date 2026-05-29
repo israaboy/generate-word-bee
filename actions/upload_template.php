@@ -53,15 +53,17 @@ if (!move_uploaded_file($arquivo['tmp_name'], $caminho_final)) {
     responder(false, 'Falha ao salvar o arquivo no servidor.');
 }
 
+$texto_preview = extrair_markdown_docx($caminho_final);
+
 // Extrai placeholders
 $placeholders = extrair_placeholders_docx($caminho_final);
 
 // Salva no banco
 $stmt = $db->prepare("
-    INSERT INTO tab_tipos_formularios (nome_formulario, template_word_path, json_estrutura_campos)
-    VALUES (?, ?, ?)
+    INSERT INTO tab_tipos_formularios (nome_formulario, template_word_path, json_estrutura_campos, texto_preview)
+    VALUES (?, ?, ?, ?)
 ");
-$stmt->execute([$nome, $caminho_rel, json_encode($estrutura, JSON_UNESCAPED_UNICODE)]);
+$stmt->execute([$nome, $caminho_rel, json_encode($estrutura, JSON_UNESCAPED_UNICODE), $texto_preview]);
 $id = $db->lastInsertId();
 
 responder(true, 'Template salvo.', [

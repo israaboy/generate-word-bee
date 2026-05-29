@@ -117,7 +117,10 @@ $templates = $db->query("
           <td><?= $t['usos'] ?></td>
           <td class="text-mono text-muted" style="font-size:.75rem;"><?= $t['template_word_path'] ? basename($t['template_word_path']) : '—' ?></td>
           <td class="text-right">
-            <button class="btn btn-outline btn-sm btn-danger" onclick="excluirTemplate(<?= $t['id_tipo_formulario'] ?>, '<?= htmlspecialchars(addslashes($t['nome_formulario'])) ?>')">Excluir</button>
+            <button class="btn btn-outline btn-sm" onclick="abrirEditorPreview(<?= $t['id_tipo_formulario'] ?>)">
+                <i data-lucide="edit-3" style="width:14px"></i> Texto
+            </button>
+            <button class="btn btn-outline btn-sm" onclick="excluirTemplate(<?= $t['id_tipo_formulario'] ?>, '<?= htmlspecialchars(addslashes($t['nome_formulario'])) ?>')">Excluir</button>
           </td>
         </tr>
         <?php endforeach; ?>
@@ -138,6 +141,82 @@ var FIXOS = [
 ];
 let arquivoSelecionado = null;
 let campoCount = 0;
+
+window.abrirEditorPreview = async function(id) {
+    const resp = await fetch(`actions/get_preview_text.php?id=${id}`);
+    const data = await resp.json();
+    let textoInicial = data.texto || "";
+
+    Swal.fire({
+        title: 'Editor de Estrutura',
+        html: `
+            <div style="margin-bottom: 15px; text-align: left;">
+                <button id="btn-reextrair" class="btn btn-sm btn-outline-primary">
+                    <i data-lucide="refresh-cw" style="width:14px"></i> Re-extrair do Word
+                </button>
+                <span id="loading-extrair" class="spinner-border spinner-border-sm d-none"></span>
+            </div>
+            <div class="editor-wrapper">
+                <div class="editor-column">
+                    <textarea id="swal-editor-input" class="form-control">${textoInicial}</textarea>
+                </div>
+                <div class="editor-column">
+                    <div id="swal-editor-preview" class="document-preview-box small-preview"></div>
+                </div>
+            </div>
+        `,
+        width: '95%',
+        didOpen: () => {
+            const input = document.getElementById('swal-editor-input');
+            const preview = document.getElementById('swal-editor-preview');
+            const btnReextrair = document.getElementById('btn-reextrair');
+            const loader = document.getElementById('loading-extrair');
+
+            const atualizar = () => {
+                let md = input.value.replace(/\u00a0/g, " ").replace(/\|\s*\n+\s*\|/g, "|\n|");
+                md = md.replace(/\$?\s*\{([a-zA-Z0-9_]+)\}/g, (m, key) => `<span class="preview-tag">${key}</span>`);
+                preview.innerHTML = marked.parse(md);
+            };
+
+            // Lógica do botão de Re-extração
+            btnReextrair.onclick = async () => {
+                if(input.value && !confirm("Isso substituirá seu texto atual pelo texto original do Word. Continuar?")) return;
+                
+                btnReextrair.disabled = true;
+                loader.classList.remove('d-none');
+
+                try {
+                    const r = await fetch(`actions/reextrair_texto.php?id=${id}`);
+                    const d = await r.json();
+                    if(d.sucesso) {
+                        input.value = d.markdown;
+                        atualizar();
+                    } else {
+                        alert(d.mensagem);
+                    }
+                } finally {
+                    btnReextrair.disabled = false;
+                    loader.classList.add('d-none');
+                }
+            };
+
+            input.addEventListener('input', atualizar);
+            atualizar();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        },
+        preConfirm: () => document.getElementById('swal-editor-input').value,
+        confirmButtonText: 'Salvar',
+        confirmButtonColor: '#28a745'
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            const fd = new FormData();
+            fd.append('id', id);
+            fd.append('texto_preview', result.value);
+            await fetch('actions/atualizar_preview.php', { method: 'POST', body: fd });
+            Swal.fire({ icon: 'success', title: 'Salvo!', timer: 1000, showConfirmButton: false });
+        }
+    });
+};
 
 // ── Dropzone ───────────────────────────────────────────────────────────────
 const initPage = function() {
@@ -161,6 +240,9 @@ const initPage = function() {
 window.processarArquivo = function (file) {
   if (!file.name.endsWith('.docx')) { toast('error', 'Apenas .docx são aceitos.'); return; }
   arquivoSelecionado = file;
+
+  document.getElementById('nome_formulario').value = file.name.replace('.docx', '');
+
   document.getElementById('previewName').textContent = file.name;
   document.getElementById('previewSize').textContent = formatBytes(file.size);
   document.getElementById('filePreview').classList.add('show');

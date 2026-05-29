@@ -51,6 +51,12 @@ $funcionarios = $db->query("
   </div>
 </div>
 
+<div id="preview-container" class="mb-3 d-none">
+    <div class="card-title">Prévia do Conteúdo</div>
+    <div id="documentPreview" class="document-preview-box">
+    </div>
+</div>
+
 <!-- Passo 2: Campos dinâmicos + Assinatura -->
 <div id="stepFormulario" style="display:none;">
   <div class="card mb-2" id="cardCampos">
@@ -101,121 +107,193 @@ $funcionarios = $db->query("
 </div>
 
 <script>
-{
-  var sigCanvas = null;
-  
-  function avancarPasso() {
-    var idTipo = document.getElementById('sel_tipo').value;
-    var idFunc = document.getElementById('sel_funcionario').value;
-    if (!idTipo) { toast('error', 'Selecione o tipo de formulário.'); return; }
-    if (!idFunc) { toast('error', 'Selecione o funcionário.'); return; }
-    carregarCampos(idTipo);
-  }
-  
-  function carregarCampos(idTipo) {
-    fetch('actions/get_campos.php?id_tipo=' + idTipo)
-      .then(function(r) { return r.json(); })
-      .then(function(d) {
-        if (!d.sucesso) { toast('error', d.mensagem); return; }
-  
-        var grid = document.getElementById('camposDinamicos');
-        grid.innerHTML = '';
-  
-        d.campos.forEach(function(campo) {
-          var div = document.createElement('div');
-          div.className = 'field' + (campo.type === 'textarea' ? ' span-2' : '');
-          var req     = campo.required !== false;
-          var reqAttr = req ? 'required' : '';
-          var input   = '';
-  
-          if (campo.type === 'select' && campo.options) {
-            var opts = campo.options.map(function(o) {
-              return '<option value="' + o + '">' + o + '</option>';
-            }).join('');
-            input = '<select name="campo_' + campo.name + '" ' + reqAttr + '><option value="">— selecione —</option>' + opts + '</select>';
-          } else if (campo.type === 'textarea') {
-            input = '<textarea name="campo_' + campo.name + '" rows="3" placeholder="' + campo.label + '" ' + reqAttr + '></textarea>';
-          } else {
-            var defVal = campo.default !== undefined ? 'value="' + campo.default + '"' : '';
-            input = '<input type="' + campo.type + '" name="campo_' + campo.name + '" placeholder="' + campo.label + '" ' + defVal + ' ' + reqAttr + '>';
-          }
-  
-          div.innerHTML = '<label>' + campo.label + (req ? ' <span class="req">*</span>' : '') + '</label>' + input;
-          grid.appendChild(div);
-        });
-  
-        document.getElementById('stepSelecao').style.display    = 'none';
-        document.getElementById('stepFormulario').style.display = 'block';
-  
-        // Init canvas após o elemento estar visível e com dimensões
-        setTimeout(function() {
-          sigCanvas = initCanvas('canvasAssinatura');
-        }, 250);
-      })
-      .catch(function(e) { toast('error', 'Erro ao carregar campos: ' + e.message); });
-  }
-  
-  function limparCanvas() {
-    if (sigCanvas) sigCanvas.clear();
-  }
-  
-  function voltarPasso() {
-    document.getElementById('stepFormulario').style.display = 'none';
-    document.getElementById('stepSelecao').style.display    = 'block';
-  }
-  
-  function novoFormulario() {
-    document.getElementById('stepResultado').style.display  = 'none';
-    document.getElementById('stepSelecao').style.display    = 'block';
-    document.getElementById('sel_tipo').value        = '';
-    document.getElementById('sel_funcionario').value = '';
-    sigCanvas = null;
-  }
-  
-  function gerarDocumento() {
-    if (!sigCanvas || sigCanvas.isEmpty()) {
-      toast('error', 'Por favor, assine o documento antes de continuar.');
-      return;
-    }
-  
-    var valido = true;
-    document.querySelectorAll('#camposDinamicos [required]').forEach(function(el) {
-      if (!el.value.trim()) { el.style.borderColor = 'var(--red)'; valido = false; }
-      else el.style.borderColor = '';
-    });
-    if (!valido) { toast('error', 'Preencha todos os campos obrigatórios.'); return; }
-  
-    var btn = document.getElementById('btnGerar');
-    btnLoading(btn, true);
-  
-    var fd = new FormData();
-    fd.append('id_tipo_formulario', document.getElementById('sel_tipo').value);
-    fd.append('cod_funcionario',    document.getElementById('sel_funcionario').value);
-    fd.append('assinatura_base64',  sigCanvas.toBase64());
-  
-    document.querySelectorAll('#camposDinamicos input, #camposDinamicos select, #camposDinamicos textarea')
-      .forEach(function(el) { if (el.name) fd.append(el.name, el.value); });
-  
-    fetch('actions/gerar_documento.php', { method: 'POST', body: fd })
-      .then(r => r.text()) // Primeiro pegamos como texto puro
-      .then(texto => {
-        console.log("RESPOSTA DO SERVIDOR:", texto); // Isso vai mostrar o erro no F12
-        try {
-          const d = JSON.parse(texto);
-          if (d.sucesso) {
-            document.getElementById('linkDownload').href = d.url_download;
-            document.getElementById('stepFormulario').style.display = 'none';
-            document.getElementById('stepResultado').style.display  = 'block';
-          } else {
-            toast('error', d.mensagem);
-          }
-        } catch (e) {
-          console.error("Erro ao converter JSON:", texto);
-          toast('error', 'Erro no servidor. Veja o console (F12)');
+var sigCanvas = null;
+
+function avancarPasso() {
+  var idTipo = document.getElementById('sel_tipo').value;
+  var idFunc = document.getElementById('sel_funcionario').value;
+  if (!idTipo) { toast('error', 'Selecione o tipo de formulário.'); return; }
+  if (!idFunc) { toast('error', 'Selecione o funcionário.'); return; }
+  carregarCampos(idTipo);
+}
+
+function carregarCampos(idTipo) {
+  fetch('actions/get_campos.php?id_tipo=' + idTipo)
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (!d.sucesso) { toast('error', d.mensagem); return; }
+
+      var grid = document.getElementById('camposDinamicos');
+      grid.innerHTML = '';
+
+      d.campos.forEach(function(campo) {
+        var div = document.createElement('div');
+        div.className = 'field' + (campo.type === 'textarea' ? ' span-2' : '');
+        var req     = campo.required !== false;
+        var reqAttr = req ? 'required' : '';
+        var input   = '';
+
+        if (campo.type === 'select' && campo.options) {
+          var opts = campo.options.map(function(o) {
+            return '<option value="' + o + '">' + o + '</option>';
+          }).join('');
+          input = '<select name="campo_' + campo.name + '" ' + reqAttr + '><option value="">— selecione —</option>' + opts + '</select>';
+        } else if (campo.type === 'textarea') {
+          input = '<textarea name="campo_' + campo.name + '" rows="3" placeholder="' + campo.label + '" ' + reqAttr + '></textarea>';
+        } else {
+          var defVal = campo.default !== undefined ? 'value="' + campo.default + '"' : '';
+          input = '<input type="' + campo.type + '" name="campo_' + campo.name + '" placeholder="' + campo.label + '" ' + defVal + ' ' + reqAttr + '>';
         }
-      })
-      .catch(function(e) { toast('error', 'Erro: ' + e.message); })
-      .finally(function()  { btnLoading(btn, false); });
+
+        div.innerHTML = '<label>' + campo.label + (req ? ' <span class="req">*</span>' : '') + '</label>' + input;
+        grid.appendChild(div);
+
+        textoBasePreview = d.texto_preview || "";
+
+        renderizarPreview(textoBasePreview);
+
+        vincularEventosPreview();
+      });
+
+      document.getElementById('stepSelecao').style.display    = 'none';
+      document.getElementById('stepFormulario').style.display = 'block';
+
+      setTimeout(function() {
+        sigCanvas = initCanvas('canvasAssinatura');
+      }, 250);
+    })
+    .catch(function(e) { toast('error', 'Erro ao carregar campos: ' + e.message); });
+}
+
+function renderizarPreview(textoBasePreview) {
+    const box = document.getElementById('documentPreview');
+
+    document.getElementById('preview-container').classList.remove('d-none');
+
+    if (!textoBasePreview || !box) return;
+
+    // 1. Limpa o "espaço duro" do Word (\u00a0) que quebra o parser de tabelas
+    let md = textoBasePreview.replace(/\u00a0/g, " ");
+
+    // 2. Substitui variáveis por spans
+    md = md.replace(/\$?\s*\{([a-zA-Z0-9_]+)\}/g, (match, key) => {
+        return `<span class="preview-tag" data-key="${key}">${key}</span>`;
+    });
+
+    // 3. Renderiza com Marked
+    // Importante: use marked.parse() se estiver na versão mais nova
+    marked.setOptions({ 
+        gfm: true, 
+        tables: true, 
+        breaks: true 
+    });
+    
+    box.innerHTML = marked.parse(md);
+    
+    // 4. Sincroniza campos
+    sincronizarSpansPreview(box);
+}
+
+function sincronizarSpansPreview(container) {
+    document.querySelectorAll('#camposDinamicos input, #camposDinamicos select, #camposDinamicos textarea').forEach(input => {
+        const key = input.name.replace('campo_', '');
+        const valor = input.value.trim();
+        const spans = container.querySelectorAll(`.preview-tag[data-key="${key}"]`);
+        
+        if (valor) {
+            spans.forEach(s => {
+                s.textContent = valor;
+                s.classList.add('filled');
+            });
+        }
+    });
+}
+
+function vincularEventosPreview() {
+  const container = document.getElementById('camposDinamicos');
+  
+  container.addEventListener('input', (e) => {
+      const input = e.target;
+      if (!input.name) return;
+
+      const key = input.name.replace('campo_', '');
+      const valor = input.value.trim();
+
+      const spans = document.querySelectorAll(`.preview-tag[data-key="${key}"]`);
+      
+      spans.forEach(span => {
+          if (valor) {
+              span.textContent = valor;
+              span.classList.add('filled');
+          } else {
+              span.textContent = key;
+              span.classList.remove('filled');
+          }
+      });
+  });
+}
+
+function limparCanvas() {
+  if (sigCanvas) sigCanvas.clear();
+}
+
+function voltarPasso() {
+  document.getElementById('stepFormulario').style.display = 'none';
+  document.getElementById('stepSelecao').style.display    = 'block';
+}
+
+function novoFormulario() {
+  document.getElementById('stepResultado').style.display  = 'none';
+  document.getElementById('stepSelecao').style.display    = 'block';
+  document.getElementById('sel_tipo').value        = '';
+  document.getElementById('sel_funcionario').value = '';
+  document.getElementsByClassName('preview-container')[0].classList.add('d-none');
+  sigCanvas = null;
+}
+
+function gerarDocumento() {
+  if (!sigCanvas || sigCanvas.isEmpty()) {
+    toast('error', 'Por favor, assine o documento antes de continuar.');
+    return;
   }
+
+  var valido = true;
+  document.querySelectorAll('#camposDinamicos [required]').forEach(function(el) {
+    if (!el.value.trim()) { el.style.borderColor = 'var(--red)'; valido = false; }
+    else el.style.borderColor = '';
+  });
+  if (!valido) { toast('error', 'Preencha todos os campos obrigatórios.'); return; }
+
+  var btn = document.getElementById('btnGerar');
+  btnLoading(btn, true);
+
+  var fd = new FormData();
+  fd.append('id_tipo_formulario', document.getElementById('sel_tipo').value);
+  fd.append('cod_funcionario',    document.getElementById('sel_funcionario').value);
+  fd.append('assinatura_base64',  sigCanvas.toBase64());
+
+  document.querySelectorAll('#camposDinamicos input, #camposDinamicos select, #camposDinamicos textarea')
+    .forEach(function(el) { if (el.name) fd.append(el.name, el.value); });
+
+  fetch('actions/gerar_documento.php', { method: 'POST', body: fd })
+    .then(r => r.text())
+    .then(texto => {
+      console.log("RESPOSTA DO SERVIDOR:", texto);
+      try {
+        const d = JSON.parse(texto);
+        if (d.sucesso) {
+          document.getElementById('linkDownload').href = d.url_download;
+          document.getElementById('stepFormulario').style.display = 'none';
+          document.getElementById('stepResultado').style.display  = 'block';
+        } else {
+          toast('error', d.mensagem);
+        }
+      } catch (e) {
+        console.error("Erro ao converter JSON:", texto);
+        toast('error', 'Erro no servidor. Veja o console (F12)');
+      }
+    })
+    .catch(function(e) { toast('error', 'Erro: ' + e.message); })
+    .finally(function()  { btnLoading(btn, false); });
 }
 </script>
